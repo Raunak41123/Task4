@@ -1,0 +1,127 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// Helper function to check operator precedence
+int precedence(char op) {
+    if (op == '+' || op == '-') return 1;
+    if (op == '*' || op == '/') return 2;
+    if (op == '^') return 3;
+    return 0;
+}
+
+// Helper function to perform operations
+int applyOperation(int a, int b, char op) {
+    switch (op) {
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/': if (b == 0) throw invalid_argument("Division by zero"); return a / b;
+        case '^': return pow(a, b);
+        default: throw invalid_argument("Invalid operator");
+    }
+}
+
+// Check if the expression is valid
+bool isValidExpression(const string& expr) {
+    int balance = 0;
+    char prev = '(';
+
+    for (char ch : expr) {
+        if (isdigit(ch) || ch == '(') {
+            if (isdigit(prev)) return false; // No two numbers without an operator
+        }
+        if (ch == '(') balance++;
+        else if (ch == ')') {
+            balance--;
+            if (balance < 0) return false;
+}
+        prev = ch;
+    }
+    return balance == 0;
+}
+
+// Convert infix to postfix
+queue<string> infixToPostfix(const string& expr) {
+    queue<string> postfix;
+    stack<char> operators;
+    size_t i = 0;
+
+    while (i < expr.size()) {
+        if (isdigit(expr[i])) {
+            string number;
+            while (i < expr.size() && isdigit(expr[i])) {
+                number += expr[i];
+                i++;
+            }
+            postfix.push(number);
+            continue;
+        } else if (expr[i] == '(') {
+            operators.push('(');
+        } else if (expr[i] == ')') {
+            while (!operators.empty() && operators.top() != '(') {
+                postfix.push(string(1, operators.top()));
+                operators.pop();
+}
+            if (!operators.empty() && operators.top() == '(') operators.pop();
+        } else if (precedence(expr[i]) > 0) {
+            while (!operators.empty() && precedence(operators.top()) >= precedence(expr[i])) {
+                postfix.push(string(1, operators.top()));
+                operators.pop();
+            }
+            operators.push(expr[i]);
+        }
+        i++;
+    }
+
+    while (!operators.empty()) {
+        postfix.push(string(1, operators.top()));
+        operators.pop();
+    }
+
+    return postfix;
+}
+
+// Evaluate postfix expression
+int evaluatePostfix(queue<string> postfix) {
+    stack<int> values;
+
+    while (!postfix.empty()) {
+        string token = postfix.front();
+        postfix.pop();
+
+        if (isdigit(token[0])) {
+            values.push(stoi(token));
+} else {
+            if (values.size() < 2) throw invalid_argument("Invalid postfix expression");
+            int b = values.top(); values.pop();
+            int a = values.top(); values.pop();
+            values.push(applyOperation(a, b, token[0]));
+        }
+    }
+
+    if (values.size() != 1) throw invalid_argument("Invalid postfix expression");
+    return values.top();
+}
+
+// Main calculator function
+void calculator(const string& expr) {
+    try {
+        if (!isValidExpression(expr)) {
+            cout << "Invalid expression\n";
+            return;
+        }
+        auto postfix = infixToPostfix(expr);
+        int result = evaluatePostfix(postfix);
+        cout << "Result: " << result << endl;
+    } catch (const exception& e) {
+        cout << "Error: " << e.what() << endl;
+    }
+}
+
+int main() {
+    string expression;
+    cout << "Enter an expression: ";
+cin >> expression;
+    calculator(expression);
+    return 0;
+}
